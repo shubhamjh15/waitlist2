@@ -267,31 +267,34 @@ const Particles: React.FC<ParticlesProps> = ({
 
 const InteractiveCard = ({ children, className }: PropsWithChildren<{ className?: string }>) => {
   const ref = React.useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+
+  // EXPLICITLY typed MotionValues - fixes "unknown" inference in production builds
+  const mouseX = useMotionValue<number>(0);
+  const mouseY = useMotionValue<number>(0);
 
   const springConfig = { damping: 25, stiffness: 200 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], ['10deg', '-10deg']), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], ['-10deg', '10deg']), springConfig);
-  
-  const glareX = useTransform(mouseX, [-0.5, 0.5], ['100%', '0%']);
-  const glareY = useTransform(mouseY, [-0.5, 0.5], ['100%', '0%']);
 
-  // Type the transform callback as [number, number] so TypeScript knows the inputs are numbers.
-  const glareOpacity = useTransform(
+  // Explicitly type transforms
+  const rotateX = useSpring(useTransform<number, string>(mouseY, [-0.5, 0.5], ['10deg', '-10deg']), springConfig);
+  const rotateY = useSpring(useTransform<number, string>(mouseX, [-0.5, 0.5], ['-10deg', '10deg']), springConfig);
+  
+  const glareX = useTransform<number, string>(mouseX, [-0.5, 0.5], ['100%', '0%']);
+  const glareY = useTransform<number, string>(mouseY, [-0.5, 0.5], ['100%', '0%']);
+
+  // Strongly typed input/output for the combined transform
+  const glareOpacity = useTransform<[number, number], number>(
     [mouseX, mouseY],
-    ([x, y]: [number, number]) => {
+    ([x, y]) => {
+      // defensive check - unnecessary in most cases but harmless for build type-safety
       if (typeof x !== 'number' || typeof y !== 'number') return 0;
       return Math.abs(x) > 0 || Math.abs(y) > 0 ? 1 : 0;
     }
   );
 
-  // Build the gradient as a MotionValue string using the glare MotionValues.
-  const gradient = useTransform(
+  // Compose a gradient string from the motion values; type explicitly
+  const gradient = useTransform<[string, string, number], string>(
     [glareX, glareY, glareOpacity],
-    // types here: glareX/glareY resolve to strings like '100%' and opacity is a number
-    ([gx, gy, o]: [string, string, number]) =>
-      `radial-gradient(circle at ${gx} ${gy}, hsla(0,0%,100%,${0.1 * o}), transparent 60%)`
+    ([gx, gy, o]) => `radial-gradient(circle at ${gx} ${gy}, hsla(0,0%,100%,${0.1 * o}), transparent 60%)`
   );
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
@@ -326,7 +329,6 @@ const InteractiveCard = ({ children, className }: PropsWithChildren<{ className?
         className="pointer-events-none absolute inset-0 rounded-lg"
         style={{
           opacity: glareOpacity,
-          // pass the computed gradient MotionValue here
           background: gradient,
         }}
       />
