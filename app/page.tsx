@@ -2,12 +2,14 @@
 
 'use client';
 
+// Make sure to run npm install @formspree/react
 import type { ComponentPropsWithoutRef, MouseEvent, PropsWithChildren } from 'react';
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
+import { useForm, ValidationError } from '@formspree/react';
 import { ArrowRight, Sparkles, Star, BrainCircuit, LayoutTemplate } from 'lucide-react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Bricolage_Grotesque } from 'next/font/google';
-
+import { AuroraText } from "@/components/ui/aurora-text"
 // --- UTILITIES & SETUP ---
 
 const brico = Bricolage_Grotesque({
@@ -16,7 +18,7 @@ const brico = Bricolage_Grotesque({
 
 const cn = (...classes: any[]) => classes.filter(Boolean).join(' ');
 
-// --- HOOKS & BASE COMPONENTS (PARTICLES, MOUSE POSITION) ---
+// --- HOOKS & BASE COMPONENTS ---
 
 interface MousePositionValue {
   x: number;
@@ -24,12 +26,12 @@ interface MousePositionValue {
 }
 
 function useMousePosition(): MousePositionValue {
-  const [mousePosition, setMousePosition] = useState<MousePositionValue>({
+  const [mousePosition, setMousePosition] = React.useState<MousePositionValue>({
     x: 0,
     y: 0,
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handleMouseMove = (event: globalThis.MouseEvent) => {
       setMousePosition({ x: event.clientX, y: event.clientY });
     };
@@ -42,7 +44,6 @@ function useMousePosition(): MousePositionValue {
   return mousePosition;
 }
 
-// Particles Component (no changes)
 interface ParticlesProps extends ComponentPropsWithoutRef<'div'> {
   className?: string;
   quantity?: number;
@@ -95,18 +96,18 @@ const Particles: React.FC<ParticlesProps> = ({
   vy = 0,
   ...props
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const context = useRef<CanvasRenderingContext2D | null>(null);
-  const circles = useRef<Circle[]>([]);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const canvasContainerRef = React.useRef<HTMLDivElement>(null);
+  const context = React.useRef<CanvasRenderingContext2D | null>(null);
+  const circles = React.useRef<Circle[]>([]);
   const mousePosition = useMousePosition();
-  const mouse = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const canvasSize = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
+  const mouse = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const canvasSize = React.useRef<{ w: number; h: number }>({ w: 0, h: 0 });
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
-  const rafID = useRef<number | null>(null);
-  const resizeTimeout = useRef<NodeJS.Timeout | null>(null);
+  const rafID = React.useRef<number | null>(null);
+  const resizeTimeout = React.useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (canvasRef.current) {
       context.current = canvasRef.current.getContext('2d');
     }
@@ -124,11 +125,11 @@ const Particles: React.FC<ParticlesProps> = ({
     };
   }, [color]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     onMouseMove();
   }, [mousePosition.x, mousePosition.y]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     initCanvas();
   }, [refresh]);
 
@@ -259,46 +260,16 @@ const Particles: React.FC<ParticlesProps> = ({
   );
 };
 
-// --- INNOVATIVE UI COMPONENTS ---
-
-const WarpingGrid = () => {
-  const mouse = useMousePosition();
-  const mouseX = useSpring(mouse.x, { stiffness: 400, damping: 90 });
-  const mouseY = useSpring(mouse.y, { stiffness: 400, damping: 90 });
-
-  useEffect(() => {
-    mouseX.set(mouse.x);
-    mouseY.set(mouse.y);
-  }, [mouse.x, mouse.y, mouseX, mouseY]);
-
-  return (
-    <motion.div
-      className="pointer-events-none fixed inset-0 z-0"
-      style={{
-        '--grid-size': '40px',
-        '--grid-color': 'hsl(var(--border) / 0.5)',
-        background: useTransform(
-          [mouseX, mouseY],
-          ([x, y]) => `
-            radial-gradient(circle at ${x}px ${y}px, hsl(var(--primary)/0.15), transparent 30%),
-            linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
-            linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px)
-          `
-        ),
-        backgroundSize: `100% 100%, var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size)`,
-      }}
-    />
-  );
-};
+// --- UI COMPONENTS ---
 
 const InteractiveCard = ({ children, className }: PropsWithChildren<{ className?: string }>) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = React.useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
   const springConfig = { damping: 25, stiffness: 200 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], ['18deg', '-18deg']), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], ['-18deg', '18deg']), springConfig);
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], ['10deg', '-10deg']), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], ['-10deg', '10deg']), springConfig);
   
   const glareX = useTransform(mouseX, [-0.5, 0.5], ['100%', '0%']);
   const glareY = useTransform(mouseY, [-0.5, 0.5], ['100%', '0%']);
@@ -353,12 +324,6 @@ const WavyText = ({ text, className, ...rest }: { text: string; className?: stri
         <motion.span
           key={index}
           initial={{ y: 0 }}
-          whileHover={{
-            y: -10,
-            scale: 1.1,
-            rotate: Math.random() > 0.5 ? '5deg' : '-5deg',
-            transition: { type: 'spring', stiffness: 350, damping: 10 },
-          }}
           transition={{ type: 'spring', stiffness: 350, damping: 5, mass: 0.5 }}
         >
           {letter === ' ' ? '\u00A0' : letter}
@@ -378,107 +343,58 @@ const users = [
 ];
 
 export default function Home() {
-  const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const magneticX = useSpring(0, { stiffness: 200, damping: 20, mass: 0.5 });
-  const magneticY = useSpring(0, { stiffness: 200, damping: 20, mass: 0.5 });
-
-  const handleMagneticMove = (e: MouseEvent) => {
-    if (!buttonRef.current) return;
-    const { clientX, clientY } = e;
-    const { left, top, width, height } = buttonRef.current.getBoundingClientRect();
-    const centerX = left + width / 2;
-    const centerY = top + height / 2;
-    const deltaX = clientX - centerX;
-    const deltaY = clientY - centerY;
-    
-    const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-    if (distance < 150) {
-      magneticX.set(deltaX * 0.2);
-      magneticY.set(deltaY * 0.2);
-    } else {
-      magneticX.set(0);
-      magneticY.set(0);
-    }
-  };
-
-  const handleMagneticLeave = () => {
-    magneticX.set(0);
-    magneticY.set(0);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setSubmitted(true);
-    setIsSubmitting(false);
-  };
+  const [state, handleSubmit] = useForm("mpwkwbdj");
 
   return (
     <>
       <GlobalStyles />
-      <main
-        onMouseMove={handleMagneticMove}
-        onMouseLeave={handleMagneticLeave}
-        className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden"
-      >
-        <WarpingGrid />
-        <Particles
-          className="absolute inset-0 z-0"
-          quantity={80}
-          ease={80}
-          size={0.3}
-          staticity={20}
-          color="#ffffff"
-        />
-        
-        <div className="relative z-10 mx-auto max-w-4xl px-4 py-16 text-center">
+      <div className="spline-container fixed inset-0 -z-10">
+        <iframe src="https://my.spline.design/aidatamodelinteraction-mdTL3FktFVHgDvFr5TKtnYDV" frameBorder="0" width="100%" height="100%" id="aura-spline"></iframe>
+      </div>
+
+      <main className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden">
+        <motion.div
+          className="relative z-10 mx-auto max-w-4xl px-4 py-12 sm:py-16 text-center"
+        >
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            whileHover={{ scale: 1.05 }}
             className="border-neutral-800 mb-8 inline-flex items-center gap-2 rounded-full border bg-neutral-900/50 px-4 py-2 backdrop-blur-sm"
           >
-            <img src="https://i.postimg.cc/j5dW4vFd/Mvpblocks.webp" alt="logo" className="spin h-6 w-6" />
+            <img src="/image.png" alt="logo" className="spin h-6 w-6" />
             <span className="text-sm font-medium">Xavin</span>
             <motion.div animate={{ x: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
               <ArrowRight className="h-4 w-4" />
             </motion.div>
           </motion.div>
 
-          {/* MODIFIED: Increased font size */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className={cn('mb-4 flex cursor-pointer flex-wrap justify-center text-5xl tracking-tight sm:text-7xl', brico.className)}
+            className={cn('mb-4 flex flex-wrap justify-center text-4xl tracking-tight sm:text-5xl md:text-7xl', brico.className)}
           >
             <span className="font-normal text-neutral-200 mr-4">Join the</span>
-            <WavyText text="Waitlist" className="font-bold bg-gradient-to-r from-rose-400 via-primary to-rose-500 bg-clip-text text-transparent" />
+            <AuroraText>Waitlist</AuroraText>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.5 }}
-            className="text-neutral-300 mx-auto mt-4 mb-12 max-w-lg leading-relaxed sm:text-lg"
+            className="text-neutral-300 mx-auto mt-4 mb-12 max-w-lg leading-relaxed text-base sm:text-lg"
           >
-            Be the first to access our Agentic AI website builder.
-            <br className="hidden sm:block" /> Build Beautiful and stunning websites with Xavin.
-          </motion.p>
+            Get early access to Xavin and create the most beautiful websites with zero effort.
+          
+            <br className="hidden sm:block" /> </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.7, staggerChildren: 0.2 }}
-            className="mb-12 grid grid-cols-1 gap-8 sm:grid-cols-3"
+            // MODIFIED: Reverted to `hidden sm:grid` to hide cards on mobile.
+            className="hidden sm:grid mb-12 grid-cols-1 gap-8 sm:grid-cols-3"
           >
             <InteractiveCard>
               <motion.div style={{ transform: 'translateZ(25px)' }} className="text-center">
@@ -507,12 +423,13 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="mx-auto flex max-w-lg flex-col gap-4 sm:flex-row"
+            className="mx-auto flex max-w-lg flex-col gap-4"
           >
             <AnimatePresence mode="wait">
-              {!submitted ? (
-                <motion.div
+              {!state.succeeded ? (
+                <motion.form
                   key="form"
+                  onSubmit={handleSubmit}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
@@ -523,30 +440,35 @@ export default function Home() {
                     <motion.input
                       whileFocus={{ scale: 1.02, boxShadow: '0 0 0 2px hsl(var(--primary)/0.5)' }}
                       transition={{ type: 'spring', stiffness: 300 }}
+                      id="email"
                       type="email"
+                      name="email"
                       placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
                       required
                       className="border-neutral-800 text-foreground placeholder:text-neutral-500 w-full rounded-lg border bg-neutral-900/50 px-6 py-4 text-lg backdrop-blur-md transition-colors focus:border-primary/50 focus:outline-none"
                     />
+                    <ValidationError
+                      prefix="Email"
+                      field="email"
+                      errors={state.errors}
+                      className="text-red-500 absolute -bottom-6 left-2 text-sm"
+                    />
                   </div>
                   <motion.button
-                    ref={buttonRef}
-                    style={{ x: magneticX, y: magneticY }}
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
+                    type="submit"
+                    disabled={state.submitting}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                    className="group text-primary-foreground focus:ring-primary/50 relative overflow-hidden rounded-lg bg-gradient-to-b from-rose-500 to-primary px-8 py-4 text-lg font-semibold text-white shadow-[0_0_20px_hsl(var(--primary)/0.3)] transition-all duration-300 hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)] focus:ring-2 focus:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="group text-primary-foreground focus:ring-primary/50 relative overflow-hidden rounded-lg bg-primary px-8 py-4 text-lg font-semibold text-white shadow-[0_0_20px_hsl(var(--primary)/0.3)] transition-all duration-300 hover:shadow-[0_0_30px_hsl(var(--primary)/0.5)] focus:ring-2 focus:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                   >
+                    <span className="absolute inset-0 block w-full -translate-x-full transform bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 ease-out group-hover:translate-x-full"></span>
                     <span className="relative z-10 flex items-center justify-center gap-2">
-                      {isSubmitting ? 'Joining...' : 'Join Waitlist'}
+                      {state.submitting ? 'Joining...' : 'Join Waitlist'}
                       <Sparkles className="h-5 w-5 transition-transform duration-300 group-hover:rotate-12" />
                     </span>
                   </motion.button>
-                </motion.div>
+                </motion.form>
               ) : (
                 <motion.div
                   key="thank-you-message"
@@ -554,7 +476,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.6 }}
-                  className="border-primary/20 text-primary flex-1 cursor-pointer rounded-lg border bg-neutral-900/50 px-6 py-4 text-lg font-medium backdrop-blur-md transition-all duration-300 hover:shadow-[0_0_20px_rgba(236,72,153,0.3)] active:brightness-125"
+                  className="border-primary/20 text-primary flex-1 cursor-pointer rounded-lg border bg-neutral-900/50 px-6 py-4 text-lg font-medium backdrop-blur-md transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--primary)/0.3)] active:brightness-125"
                 >
                   <span className="flex items-center justify-center gap-2">
                     Thanks for joining! <Sparkles className="h-5 w-5 animate-pulse" />
@@ -564,12 +486,11 @@ export default function Home() {
             </AnimatePresence>
           </motion.div>
 
-          {/* NEW: Added text below the form */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            className="text-neutral-500 mt-4 text-sm"
+            className="text-neutral-500 mt-8 text-sm"
           >
             Join to get free samples ✨
           </motion.p>
@@ -578,7 +499,7 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 1 }}
-            className="mt-12 flex items-center justify-center gap-2"
+            className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-2"
           >
             <div className="flex -space-x-4">
               {users.map((user, i) => (
@@ -587,8 +508,7 @@ export default function Home() {
                   initial={{ scale: 0, x: -10 }}
                   animate={{ scale: 1, x: 0 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 1 + i * 0.15 }}
-                  whileHover={{ y: -6, scale: 1.1, zIndex: 10 }}
-                  className="border-background from-rose-500 size-12 rounded-full border-2 bg-gradient-to-r to-primary p-[2px]"
+                  className="border-background size-12 rounded-full border-2 bg-gradient-to-r from-sky-500 to-primary p-[2px]"
                 >
                   <div className="overflow-hidden rounded-full">
                     <img src={user.imgUrl} alt="Avatar" className="rounded-full" width={48} height={48} />
@@ -600,12 +520,12 @@ export default function Home() {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 1.3 }}
-              className="text-neutral-400 ml-3 text-base"
+              className="text-neutral-400 mt-4 sm:mt-0 sm:ml-3 text-base"
             >
               <span className="text-primary font-semibold">100+</span> already joined ✨
             </motion.span>
           </motion.div>
-        </div>
+        </motion.div>
       </main>
     </>
   );
@@ -622,8 +542,11 @@ const GlobalStyles = () => (
       --card-foreground: 0 0% 95%;
       --popover: 0 0% 9%;
       --popover-foreground: 0 0% 95%;
-      --primary: 346.8 77.2% 49.8%;
-      --primary-foreground: 355.7 100% 97.3%;
+      
+      /* Primary color is #3B82F6 */
+      --primary: 217 91% 60%;
+      --primary-foreground: 210 40% 98%;
+
       --secondary: 240 3.7% 15.9%;
       --secondary-foreground: 0 0% 98%;
       --muted: 0 0% 15%;
@@ -634,7 +557,8 @@ const GlobalStyles = () => (
       --destructive-foreground: 0 85.7% 97.3%;
       --border: 240 3.7% 15.9%;
       --input: 240 3.7% 15.9%;
-      --ring: 346.8 77.2% 49.8%;
+      
+      --ring: 217 91% 60%;
       --radius: 0.5rem;
     }
 
