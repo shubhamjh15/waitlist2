@@ -123,14 +123,17 @@ const Particles: React.FC<ParticlesProps> = ({
       if (resizeTimeout.current) clearTimeout(resizeTimeout.current);
       window.removeEventListener('resize', handleResize);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [color]);
 
   React.useEffect(() => {
     onMouseMove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mousePosition.x, mousePosition.y]);
 
   React.useEffect(() => {
     initCanvas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh]);
 
   const initCanvas = () => {
@@ -273,7 +276,23 @@ const InteractiveCard = ({ children, className }: PropsWithChildren<{ className?
   
   const glareX = useTransform(mouseX, [-0.5, 0.5], ['100%', '0%']);
   const glareY = useTransform(mouseY, [-0.5, 0.5], ['100%', '0%']);
-  const glareOpacity = useTransform([mouseX, mouseY], ([x, y]) => (Math.abs(x) > 0 || Math.abs(y) > 0 ? 1 : 0));
+
+  // Type the transform callback as [number, number] so TypeScript knows the inputs are numbers.
+  const glareOpacity = useTransform(
+    [mouseX, mouseY],
+    ([x, y]: [number, number]) => {
+      if (typeof x !== 'number' || typeof y !== 'number') return 0;
+      return Math.abs(x) > 0 || Math.abs(y) > 0 ? 1 : 0;
+    }
+  );
+
+  // Build the gradient as a MotionValue string using the glare MotionValues.
+  const gradient = useTransform(
+    [glareX, glareY, glareOpacity],
+    // types here: glareX/glareY resolve to strings like '100%' and opacity is a number
+    ([gx, gy, o]: [string, string, number]) =>
+      `radial-gradient(circle at ${gx} ${gy}, hsla(0,0%,100%,${0.1 * o}), transparent 60%)`
+  );
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     if (!ref.current) return;
@@ -307,9 +326,8 @@ const InteractiveCard = ({ children, className }: PropsWithChildren<{ className?
         className="pointer-events-none absolute inset-0 rounded-lg"
         style={{
           opacity: glareOpacity,
-          background: useTransform(
-            () => `radial-gradient(circle at ${glareX.get()} ${glareY.get()}, hsla(0,0%,100%,0.1), transparent 60%)`
-          ),
+          // pass the computed gradient MotionValue here
+          background: gradient,
         }}
       />
     </motion.div>
